@@ -1,6 +1,5 @@
 use crate::{
-    black, fill, point, px, size, Bounds, ElementContext, Hsla, LineLayout, Pixels, Point, Result,
-    SharedString, UnderlineStyle, WrapBoundary, WrappedLineLayout,
+    black, fill, green, point, px, red, size, Bounds, ElementContext, Hsla, LineLayout, Pixels, Point, Result, SharedString, UnderlineStyle, WrapBoundary, WrappedLineLayout
 };
 use derive_more::{Deref, DerefMut};
 use smallvec::SmallVec;
@@ -45,6 +44,8 @@ impl ShapedLine {
         &self,
         origin: Point<Pixels>,
         line_height: Pixels,
+        show_bracket_highlights: bool,
+        bracket_highlights_type: Option<&str>,
         cx: &mut ElementContext,
     ) -> Result<()> {
         paint_line(
@@ -53,6 +54,8 @@ impl ShapedLine {
             line_height,
             &self.decoration_runs,
             &[],
+            show_bracket_highlights,
+            bracket_highlights_type,
             cx,
         )?;
 
@@ -91,6 +94,8 @@ impl WrappedLine {
             line_height,
             &self.decoration_runs,
             &self.wrap_boundaries,
+            false,
+            None,
             cx,
         )?;
 
@@ -104,8 +109,12 @@ fn paint_line(
     line_height: Pixels,
     decoration_runs: &[DecorationRun],
     wrap_boundaries: &[WrapBoundary],
+    show_bracket_highlights: bool,
+    bracket_highlights_type: Option<&str>,
     cx: &mut ElementContext<'_>,
 ) -> Result<()> {
+    // TODO
+    let _ = bracket_highlights_type;
     let padding_top = (line_height - layout.ascent - layout.descent) / 2.;
     let baseline_offset = point(px(0.), padding_top + layout.ascent);
     let mut decoration_runs = decoration_runs.iter();
@@ -199,7 +208,11 @@ fn paint_line(
                         origin: background_origin,
                         size: size(glyph_origin.x - background_origin.x, line_height),
                     },
-                    background_color,
+                    if show_bracket_highlights {
+                        red()
+                    } else {
+                        background_color
+                    }
                 ));
             }
 
@@ -244,6 +257,12 @@ fn paint_line(
         let glyph = &run.glyphs[boundary.glyph_ix];
         last_line_end_x -= glyph.position.x;
     }
+
+    current_background = if show_bracket_highlights {
+        Some((glyph_origin, green()))
+    } else {
+        None
+    };
 
     if let Some((background_origin, background_color)) = current_background.take() {
         cx.paint_quad(fill(

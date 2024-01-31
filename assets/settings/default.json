@@ -88,6 +88,16 @@
   // 3. Draw all invisible symbols:
   //   "all"
   "show_whitespaces": "selection",
+  // Whether to show bracket highlights in the editor.
+  // This setting can take three values:
+  //
+  // 1. Draw bracket highlights using rainbow colors (default):
+  //    "rainbow"
+  // 2. Draw bracket highlights using monochrome colors:
+  //   "monochrome"
+  // 3. Do not draw bracket highlights:
+  //   "none"
+  "show_bracket_highlights": "rainbow",
   // Settings related to calls in Zed
   "calls": {
     // Join calls with the microphone muted by default

@@ -87,6 +87,8 @@ pub struct LanguageSettings {
     pub show_copilot_suggestions: bool,
     /// Whether to show tabs and spaces in the editor.
     pub show_whitespaces: ShowWhitespaceSetting,
+    /// Whether to show tabs and spaces in the editor.
+    pub show_bracket_highlights: ShowBracketHighlightsSetting,
     /// Whether to start a new line with a comment when a previous line is a comment as well.
     pub extend_comment_on_newline: bool,
     /// Inlay hint related settings.
@@ -202,6 +204,9 @@ pub struct LanguageSettingsContent {
     /// Whether to show tabs and spaces in the editor.
     #[serde(default)]
     pub show_whitespaces: Option<ShowWhitespaceSetting>,
+    /// Whether to show bracket highlights in the editor.
+    #[serde(default)]
+    pub show_bracket_highlights: Option<ShowBracketHighlightsSetting>,
     /// Whether to start a new line with a comment when a previous line is a comment as well.
     ///
     /// Default: true
@@ -264,7 +269,7 @@ pub enum FormatOnSave {
     },
 }
 
-/// Controls how whitespace should be displayedin the editor.
+/// Controls how whitespace should be displayed in the editor.
 #[derive(Copy, Clone, Debug, Serialize, Deserialize, PartialEq, Eq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum ShowWhitespaceSetting {
@@ -274,6 +279,18 @@ pub enum ShowWhitespaceSetting {
     None,
     /// Draw all invisible symbols.
     All,
+}
+
+/// Controls how bracket highlights should be displayed in the editor.
+#[derive(Copy, Clone, Debug, Serialize, Deserialize, PartialEq, Eq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum ShowBracketHighlightsSetting {
+    /// Use Rainbow Color to show bracket highlights
+    Rainbow,
+    /// Use Monochrome Color to show bracket highlights
+    Monochrome,
+    /// Do not show bracket highlights
+    None,
 }
 
 /// Controls which formatter should be used when formatting code.
@@ -575,6 +592,10 @@ fn merge_settings(settings: &mut LanguageSettings, src: &LanguageSettingsContent
         src.show_copilot_suggestions,
     );
     merge(&mut settings.show_whitespaces, src.show_whitespaces);
+    merge(
+        &mut settings.show_bracket_highlights,
+        src.show_bracket_highlights,
+    );
     merge(
         &mut settings.extend_comment_on_newline,
         src.extend_comment_on_newline,

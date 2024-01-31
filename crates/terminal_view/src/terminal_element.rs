@@ -91,7 +91,7 @@ impl LayoutCell {
             )
         };
 
-        self.text.paint(pos, layout.dimensions.line_height, cx).ok();
+        self.text.paint(pos, layout.dimensions.line_height, false, None, cx).ok();
     }
 }
 

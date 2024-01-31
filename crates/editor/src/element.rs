@@ -34,7 +34,7 @@ use gpui::{
     TextStyle, View, ViewContext, WindowContext,
 };
 use itertools::Itertools;
-use language::language_settings::ShowWhitespaceSetting;
+use language::language_settings::{ShowBracketHighlightsSetting, ShowWhitespaceSetting};
 use multi_buffer::Anchor;
 use project::{
     project_settings::{GitGutterSetting, ProjectSettings},
@@ -748,7 +748,7 @@ impl EditorElement {
                         ix as f32 * line_height - (scroll_top % line_height),
                     );
 
-                line.paint(line_origin, line_height, cx).log_err();
+                line.paint(line_origin, line_height, false, None, cx).log_err();
             }
         }
 
@@ -904,13 +904,9 @@ impl EditorElement {
         let start_row = layout.visible_display_row_range.start;
         let content_origin = text_bounds.origin + point(layout.gutter_margin, Pixels::ZERO);
         let line_end_overshoot = 0.15 * layout.position_map.line_height;
-        let whitespace_setting = self
-            .editor
-            .read(cx)
-            .buffer
-            .read(cx)
-            .settings_at(0, cx)
-            .show_whitespaces;
+        let lang_settings = self.editor.read(cx).buffer.read(cx).settings_at(0, cx);
+        let whitespace_setting = lang_settings.show_whitespaces;
+        let bracket_highlights_setting = lang_settings.show_bracket_highlights;
 
         cx.with_content_mask(
             Some(ContentMask {
@@ -1148,6 +1144,7 @@ impl EditorElement {
                         row,
                         content_origin,
                         whitespace_setting,
+                        bracket_highlights_setting,
                         &invisible_display_ranges,
                         cx,
                     )
@@ -2844,6 +2841,7 @@ impl LineWithInvisibles {
         row: u32,
         content_origin: gpui::Point<Pixels>,
         whitespace_setting: ShowWhitespaceSetting,
+        bracket_highlights_setting: ShowBracketHighlightsSetting,
         selection_ranges: &[Range<DisplayPoint>],
         cx: &mut ElementContext,
     ) {
@@ -2854,6 +2852,8 @@ impl LineWithInvisibles {
             .paint(
                 content_origin + gpui::point(-layout.position_map.scroll_position.x, line_y),
                 line_height,
+                false,
+                None,
                 cx,
             )
             .log_err();
@@ -2866,6 +2866,7 @@ impl LineWithInvisibles {
             row,
             line_height,
             whitespace_setting,
+            bracket_highlights_setting,
             cx,
         );
     }
@@ -2879,12 +2880,19 @@ impl LineWithInvisibles {
         row: u32,
         line_height: Pixels,
         whitespace_setting: ShowWhitespaceSetting,
+        bracket_highlights_setting: ShowBracketHighlightsSetting,
         cx: &mut ElementContext,
     ) {
         let allowed_invisibles_regions = match whitespace_setting {
             ShowWhitespaceSetting::None => return,
             ShowWhitespaceSetting::Selection => Some(selection_ranges),
             ShowWhitespaceSetting::All => None,
+        };
+
+        let (show_bracket_highlights, bracket_highlights_type) = match bracket_highlights_setting {
+            ShowBracketHighlightsSetting::Rainbow => (true, Some("Rainbow")),
+            ShowBracketHighlightsSetting::Monochrome => (true, Some("Monochrome")),
+            ShowBracketHighlightsSetting::None => (false, None),
         };
 
         for invisible in &self.invisibles {
@@ -2911,7 +2919,7 @@ impl LineWithInvisibles {
                     continue;
                 }
             }
-            invisible_symbol.paint(origin, line_height, cx).log_err();
+            invisible_symbol.paint(origin, line_height, show_bracket_highlights, bracket_highlights_type, cx).log_err();
         }
     }
 }
@@ -3318,7 +3326,7 @@ impl Cursor {
 
         if let Some(block_text) = &self.block_text {
             block_text
-                .paint(self.origin + origin, self.line_height, cx)
+                .paint(self.origin + origin, self.line_height, false, None, cx)
                 .log_err();
         }
     }
